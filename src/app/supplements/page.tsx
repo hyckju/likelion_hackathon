@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSupplementInventory, repurchaseLink } from "@/lib/inventory";
 
 export default async function SupplementsPage() {
   const supabase = await createClient();
@@ -15,9 +16,12 @@ export default async function SupplementsPage() {
 
   const { data: supplements } = await supabase
     .from("supplements")
-    .select("id, name, dose_times_per_day, total_quantity, start_date, dose_times")
+    .select("id, name, dose_times_per_day, start_date, dose_times")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  const inventory = await getSupplementInventory(supabase, user.id);
+  const inventoryById = new Map(inventory.map((i) => [i.id, i]));
 
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -40,25 +44,47 @@ export default async function SupplementsPage() {
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {supplements.map((s) => (
-              <li
-                key={s.id}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-              >
-                <p className="font-medium text-black dark:text-zinc-50">
-                  {s.name}
-                </p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  하루 {s.dose_times_per_day}회 ·{" "}
-                  {(s.dose_times ?? [])
-                    .map((t: string) => t.slice(0, 5))
-                    .join(", ")}
-                </p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  총 {s.total_quantity}개 · {s.start_date}부터
-                </p>
-              </li>
-            ))}
+            {supplements.map((s) => {
+              const inv = inventoryById.get(s.id);
+              return (
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+                >
+                  <p className="font-medium text-black dark:text-zinc-50">
+                    {s.name}
+                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    하루 {s.dose_times_per_day}회 ·{" "}
+                    {(s.dose_times ?? [])
+                      .map((t: string) => t.slice(0, 5))
+                      .join(", ")}
+                  </p>
+                  {inv && (
+                    <p
+                      className={`text-sm ${
+                        inv.isLow
+                          ? "font-medium text-red-600 dark:text-red-400"
+                          : "text-zinc-500 dark:text-zinc-400"
+                      }`}
+                    >
+                      잔여 {inv.remainingQuantity}개 (약 {inv.daysRemaining}
+                      일분) · {s.start_date}부터
+                    </p>
+                  )}
+                  {inv?.isLow && (
+                    <a
+                      href={repurchaseLink(s.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                    >
+                      재구매하기
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

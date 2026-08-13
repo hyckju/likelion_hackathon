@@ -9,6 +9,7 @@ import {
   getReceivedReactionsToday,
 } from "@/lib/reactions";
 import { computeStreak } from "@/lib/streak";
+import { getSupplementInventory, repurchaseLink } from "@/lib/inventory";
 import SignOutButton from "./SignOutButton";
 import ReactionPrompts from "./ReactionPrompts";
 import StreakWidget from "./StreakWidget";
@@ -67,6 +68,8 @@ export default async function HomePage() {
   const reactionPrompts = await getPendingReactionPrompts(supabase, user.id);
   const receivedReactions = await getReceivedReactionsToday(supabase, user.id);
   const streak = await computeStreak(supabase, user.id);
+  const inventory = await getSupplementInventory(supabase, user.id);
+  const lowStockSupplements = inventory.filter((i) => i.isLow);
   const now = new Date();
 
   return (
@@ -80,6 +83,35 @@ export default async function HomePage() {
         </div>
 
         <StreakWidget streak={streak} />
+
+        {lowStockSupplements.length > 0 && (
+          <div className="mb-6 flex flex-col gap-3">
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              곧 떨어져요
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {lowStockSupplements.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950"
+                >
+                  <p className="font-medium text-red-900 dark:text-red-200">
+                    {inv.name} 잔여 {inv.remainingQuantity}개 (약{" "}
+                    {inv.daysRemaining}일분)
+                  </p>
+                  <a
+                    href={repurchaseLink(inv.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                  >
+                    재구매하기
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {receivedReactions.length > 0 && (
           <div className="mb-6 flex flex-col gap-3">
