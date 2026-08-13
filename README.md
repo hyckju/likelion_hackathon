@@ -63,7 +63,11 @@ npx vercel env pull .env.local
 1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성
 2. Project Settings > API에서 URL과 anon key 확인 후 `.env.local`에 입력
 3. **SQL Editor에서 `supabase/migrations/` 안의 파일들을 번호 순서대로(0001 → 0002 → 0003 → 0004) 전부 실행**해주세요. 스키마, RLS, Storage 버킷이 여기 다 들어있습니다.
-4. **이메일 발송(매직링크 로그인) 설정이 꼭 필요합니다.** Supabase 기본 이메일은 시간당 발송 한도가 매우 낮아서(2~4건) 실사용/데모에서 바로 막혀요. Authentication → SMTP Settings에서 커스텀 SMTP를 등록하세요 (Resend, Gmail 등). Resend를 쓸 경우 도메인 인증 전에는 가입한 계정 이메일로만 발송되니, 여러 계정으로 테스트하려면 도메인 인증까지 고려해야 합니다.
+4. **이메일 발송(매직링크 로그인) 설정이 꼭 필요합니다.** Supabase 기본 이메일은 시간당 발송 한도가 매우 낮아서(2~4건) 실사용/데모에서 바로 막혀요. Authentication → SMTP Settings에서 커스텀 SMTP를 등록하세요.
+   - **SendGrid 추천** — 도메인 구매/인증 없이 [Single Sender Verification](https://app.sendgrid.com)만으로 아무 이메일 주소에나 발송 가능 (무료 티어 하루 100통). Settings → Sender Authentication에서 발신용 이메일 하나를 인증하고, Settings → API Keys에서 키 발급.
+     - Host: `smtp.sendgrid.net` / Port: `587` / Username: `apikey` (문자 그대로) / Password: 발급받은 `SG.`로 시작하는 API 키
+   - Gmail(앱 비밀번호)이나 Resend(도메인 인증 필요)도 대안이 될 수 있지만, 여러 계정으로 테스트하려면 SendGrid 쪽이 제일 간단합니다.
+   - Port는 **587**만 지원되니 오타(예: 585) 없이 정확히 입력하세요 — 잘못된 포트는 에러 없이 `context deadline exceeded` 타임아웃만 나서 원인 찾기 어렵습니다.
 5. **무료 티어는 7일간 활동이 없으면 프로젝트가 일시정지됩니다.** 팀원이 주기적으로 대시보드에 접속해 활성 상태를 유지해주세요.
 
 ## Vercel 배포
