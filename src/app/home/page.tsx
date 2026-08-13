@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ensureTodaysSchedules } from "@/lib/schedule";
+import { generateNagsForMyConnections, getTodaysReceivedNags } from "@/lib/nags";
 import SignOutButton from "./SignOutButton";
 
 type Connection = {
@@ -69,6 +70,8 @@ export default async function HomePage() {
   ];
 
   const todaysSchedules = await ensureTodaysSchedules(supabase, user.id);
+  await generateNagsForMyConnections(supabase, user.id);
+  const receivedNags = await getTodaysReceivedNags(supabase, user.id);
   const now = new Date();
 
   return (
@@ -80,6 +83,29 @@ export default async function HomePage() {
           </h1>
           <SignOutButton />
         </div>
+
+        {receivedNags.length > 0 && (
+          <div className="mb-6 flex flex-col gap-3">
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              잔소리 도착
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {receivedNags.map((nag) => (
+                <li
+                  key={nag.id}
+                  className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
+                >
+                  <p className="text-sm text-amber-900 dark:text-amber-200">
+                    {nag.message}
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    {nag.senderName}님이 보냄
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="mb-6 flex flex-col gap-3">
           <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
