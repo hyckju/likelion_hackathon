@@ -3,9 +3,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ensureTodaysSchedules } from "@/lib/schedule";
 import { generateNagsForMyConnections, getTodaysReceivedNags } from "@/lib/nags";
+import { getAcceptedConnections } from "@/lib/connections";
+import {
+  getPendingReactionPrompts,
+  getReceivedReactionsToday,
+} from "@/lib/reactions";
 import SignOutButton from "./SignOutButton";
+import ReactionPrompts from "./ReactionPrompts";
 
-type Connection = {
+type ConnectionDisplay = {
   otherName: string;
   label: string;
 };
@@ -31,47 +37,33 @@ export default async function HomePage() {
     redirect("/onboarding");
   }
 
-  const [{ data: asInviter }, { data: asPartner }] = await Promise.all([
-    supabase
-      .from("relationships")
-      .select("partner_id, relation_type")
-      .eq("user_id", user.id)
-      .eq("status", "accepted"),
-    supabase
-      .from("relationships")
-      .select("user_id, relation_type")
-      .eq("partner_id", user.id)
-      .eq("status", "accepted"),
-  ]);
-
-  const otherIds = [
-    ...(asInviter ?? []).map((r) => r.partner_id),
-    ...(asPartner ?? []).map((r) => r.user_id),
-  ];
+  const accepted = await getAcceptedConnections(supabase, user.id);
 
   let namesById = new Map<string, string>();
-  if (otherIds.length > 0) {
+  if (accepted.length > 0) {
     const { data: others } = await supabase
       .from("users")
       .select("id, name")
-      .in("id", otherIds);
+      .in(
+        "id",
+        accepted.map((c) => c.otherId),
+      );
     namesById = new Map((others ?? []).map((u) => [u.id, u.name]));
   }
 
-  const connections: Connection[] = [
-    ...(asInviter ?? []).map((r) => ({
-      otherName: namesById.get(r.partner_id) ?? "이름 없음",
-      label: `나의 ${r.relation_type}`,
-    })),
-    ...(asPartner ?? []).map((r) => ({
-      otherName: namesById.get(r.user_id) ?? "이름 없음",
-      label: `나는 이 사람의 ${r.relation_type}`,
-    })),
-  ];
+  const connections: ConnectionDisplay[] = accepted.map((c) => ({
+    otherName: namesById.get(c.otherId) ?? "이름 없음",
+    label:
+      c.perspective === "inviter"
+        ? `나의 ${c.relationType}`
+        : `나는 이 사람의 ${c.relationType}`,
+  }));
 
   const todaysSchedules = await ensureTodaysSchedules(supabase, user.id);
   await generateNagsForMyConnections(supabase, user.id);
   const receivedNags = await getTodaysReceivedNags(supabase, user.id);
+  const reactionPrompts = await getPendingReactionPrompts(supabase, user.id);
+  const receivedReactions = await getReceivedReactionsToday(supabase, user.id);
   const now = new Date();
 
   return (
@@ -83,6 +75,29 @@ export default async function HomePage() {
           </h1>
           <SignOutButton />
         </div>
+
+        {receivedReactions.length > 0 && (
+          <div className="mb-6 flex flex-col gap-3">
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              받은 응원
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {receivedReactions.map((r) => (
+                <li
+                  key={r.id}
+                  className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+                >
+                  <p className="text-black dark:text-zinc-50">
+                    <span className="mr-2 text-lg">{r.emojiOrText}</span>
+                    {r.senderName}님이 {r.supplementName} 복용을 응원했어요
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <ReactionPrompts prompts={reactionPrompts} />
 
         {receivedNags.length > 0 && (
           <div className="mb-6 flex flex-col gap-3">

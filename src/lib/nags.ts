@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { todayInSeoul } from "./schedule";
+import { getAcceptedConnections } from "./connections";
 import type { RelationType } from "./relations";
 
 // relation_type은 "그 관계에서 이 두 사람이 쓰는 톤"으로 단순화해서 쓴다.
@@ -30,30 +31,7 @@ export async function generateNagsForMyConnections(
   supabase: SupabaseClient,
   myUserId: string,
 ) {
-  const [{ data: asInviter }, { data: asPartner }] = await Promise.all([
-    supabase
-      .from("relationships")
-      .select("partner_id, relation_type")
-      .eq("user_id", myUserId)
-      .eq("status", "accepted"),
-    supabase
-      .from("relationships")
-      .select("user_id, relation_type")
-      .eq("partner_id", myUserId)
-      .eq("status", "accepted"),
-  ]);
-
-  const connections = [
-    ...(asInviter ?? []).map((r) => ({
-      otherId: r.partner_id as string,
-      relationType: r.relation_type as RelationType,
-    })),
-    ...(asPartner ?? []).map((r) => ({
-      otherId: r.user_id as string,
-      relationType: r.relation_type as RelationType,
-    })),
-  ];
-
+  const connections = await getAcceptedConnections(supabase, myUserId);
   if (connections.length === 0) return;
 
   const otherIds = connections.map((c) => c.otherId);
