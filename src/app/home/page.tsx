@@ -8,8 +8,10 @@ import {
   getPendingReactionPrompts,
   getReceivedReactionsToday,
 } from "@/lib/reactions";
+import { computeStreak } from "@/lib/streak";
 import SignOutButton from "./SignOutButton";
 import ReactionPrompts from "./ReactionPrompts";
+import StreakWidget from "./StreakWidget";
 
 type ConnectionDisplay = {
   otherName: string;
@@ -64,6 +66,7 @@ export default async function HomePage() {
   const receivedNags = await getTodaysReceivedNags(supabase, user.id);
   const reactionPrompts = await getPendingReactionPrompts(supabase, user.id);
   const receivedReactions = await getReceivedReactionsToday(supabase, user.id);
+  const streak = await computeStreak(supabase, user.id);
   const now = new Date();
 
   return (
@@ -75,6 +78,8 @@ export default async function HomePage() {
           </h1>
           <SignOutButton />
         </div>
+
+        <StreakWidget streak={streak} />
 
         {receivedReactions.length > 0 && (
           <div className="mb-6 flex flex-col gap-3">
