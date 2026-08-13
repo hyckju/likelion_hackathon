@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ensureTodaysSchedules } from "@/lib/schedule";
 import SignOutButton from "./SignOutButton";
 
 type Connection = {
@@ -67,6 +68,9 @@ export default async function HomePage() {
     })),
   ];
 
+  const todaysSchedules = await ensureTodaysSchedules(supabase, user.id);
+  const now = new Date();
+
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
       <div className="w-full max-w-sm">
@@ -75,6 +79,50 @@ export default async function HomePage() {
             {profile.name}님, 안녕하세요
           </h1>
           <SignOutButton />
+        </div>
+
+        <div className="mb-6 flex flex-col gap-3">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            오늘의 복용 일정
+          </h2>
+          {todaysSchedules.length === 0 ? (
+            <p className="rounded-lg bg-zinc-100 p-4 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+              등록된 영양제가 없어요.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {todaysSchedules.map((s) => {
+                const time = new Date(s.scheduledTime);
+                const isDue = s.status === "pending" && time <= now;
+                const timeLabel = time.toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Asia/Seoul",
+                });
+                return (
+                  <li
+                    key={s.id}
+                    className={`rounded-lg border p-4 ${
+                      isDue
+                        ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                        : "border-zinc-200 dark:border-zinc-800"
+                    }`}
+                  >
+                    <p className="font-medium">{s.supplementName}</p>
+                    <p
+                      className={`text-sm ${isDue ? "opacity-80" : "text-zinc-500 dark:text-zinc-400"}`}
+                    >
+                      {s.status === "completed"
+                        ? `${timeLabel} · 복용 완료`
+                        : isDue
+                          ? "지금 먹을 시간이에요"
+                          : `${timeLabel} 예정`}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
         <div className="mb-6 flex flex-col gap-3">
@@ -104,12 +152,26 @@ export default async function HomePage() {
           )}
         </div>
 
-        <Link
-          href="/invite"
-          className="block rounded-full bg-foreground px-5 py-3 text-center text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-        >
-          초대 링크 만들기
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/supplements/new"
+            className="block rounded-full bg-foreground px-5 py-3 text-center text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+          >
+            영양제 등록하기
+          </Link>
+          <Link
+            href="/supplements"
+            className="block rounded-full border border-zinc-300 px-5 py-3 text-center text-base font-medium text-black transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
+          >
+            내 영양제 보기
+          </Link>
+          <Link
+            href="/invite"
+            className="block rounded-full border border-zinc-300 px-5 py-3 text-center text-base font-medium text-black transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
+          >
+            초대 링크 만들기
+          </Link>
+        </div>
       </div>
     </div>
   );
