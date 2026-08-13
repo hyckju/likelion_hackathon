@@ -10,6 +10,18 @@ export function todayInSeoul(): string {
   return seoulNow.toISOString().slice(0, 10);
 }
 
+export function addDaysToDateString(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export function seoulDateStringOf(isoTimestamp: string): string {
+  const d = new Date(isoTimestamp);
+  const seoul = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return seoul.toISOString().slice(0, 10);
+}
+
 function scheduledTimeISO(dateStr: string, timeStr: string): string {
   // timeStr: "HH:MM" or "HH:MM:SS" (Postgres time 컬럼에서 옴)
   const hhmm = timeStr.slice(0, 5);

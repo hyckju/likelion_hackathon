@@ -265,6 +265,12 @@ export default async function HomePage() {
           >
             초대 링크 만들기
           </Link>
+          <Link
+            href="/report"
+            className="block rounded-full border border-zinc-300 px-5 py-3 text-center text-base font-medium text-black transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
+          >
+            주간 리포트 보기
+          </Link>
         </div>
       </div>
     </div>

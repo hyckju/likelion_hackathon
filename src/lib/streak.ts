@@ -1,17 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { todayInSeoul } from "./schedule";
-
-function addDaysToDateString(dateStr: string, days: number): string {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function seoulDateStringOf(isoTimestamp: string): string {
-  const d = new Date(isoTimestamp);
-  const seoul = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-  return seoul.toISOString().slice(0, 10);
-}
+import {
+  todayInSeoul,
+  addDaysToDateString,
+  seoulDateStringOf,
+} from "./schedule";
 
 export type StreakInfo = {
   current: number;

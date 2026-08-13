@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/home",
   "/supplements",
   "/verify",
+  "/report",
 ];
 
 export async function updateSession(request: NextRequest) {
