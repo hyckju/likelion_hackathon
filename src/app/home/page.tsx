@@ -108,16 +108,32 @@ export default async function HomePage() {
                         : "border-zinc-200 dark:border-zinc-800"
                     }`}
                   >
-                    <p className="font-medium">{s.supplementName}</p>
-                    <p
-                      className={`text-sm ${isDue ? "opacity-80" : "text-zinc-500 dark:text-zinc-400"}`}
-                    >
-                      {s.status === "completed"
-                        ? `${timeLabel} · 복용 완료`
-                        : isDue
-                          ? "지금 먹을 시간이에요"
-                          : `${timeLabel} 예정`}
-                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium">{s.supplementName}</p>
+                        <p
+                          className={`text-sm ${isDue ? "opacity-80" : "text-zinc-500 dark:text-zinc-400"}`}
+                        >
+                          {s.status === "completed"
+                            ? `${timeLabel} · 복용 완료`
+                            : isDue
+                              ? "지금 먹을 시간이에요"
+                              : `${timeLabel} 예정`}
+                        </p>
+                      </div>
+                      {s.status === "pending" && (
+                        <Link
+                          href={`/verify/${s.id}`}
+                          className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium ${
+                            isDue
+                              ? "bg-white text-black dark:bg-black dark:text-white"
+                              : "bg-black text-white dark:bg-white dark:text-black"
+                          }`}
+                        >
+                          인증하기
+                        </Link>
+                      )}
+                    </div>
                   </li>
                 );
               })}
